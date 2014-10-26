@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Suman Singh" />
+
+
+<title>Practical Machine Learning</title>
+
+
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+<style type="text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+<div class="container-fluid main-container">
+
+
+<div id="header">
+<h1 class="title">Practical Machine Learning</h1>
+<h4 class="author"><em>Suman Singh</em></h4>
+<h4 class="date"><em>Sunday, October 26, 2014</em></h4>
+</div>
+
+
+<p>This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href="http://rmarkdown.rstudio.com">http://rmarkdown.rstudio.com</a>.</p>
+<p>When you click the <strong>Knit</strong> button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:</p>
+<pre class="r"><code># include all required libraries 
+library(caret); </code></pre>
+<pre><code>## Warning: package 'caret' was built under R version 3.1.1</code></pre>
+<pre><code>## Loading required package: lattice
+## Loading required package: ggplot2</code></pre>
+<pre><code>## Warning: package 'ggplot2' was built under R version 3.0.3</code></pre>
+<pre class="r"><code>library(lattice);
+library(ggplot2);
+# set directory
+
+setwd(&quot;C:/Users/ZCOE351/Desktop/Practical Machine Learning/data&quot;)
+
+# Load the dataset for training &amp; testing for the assignment
+
+  TrainSet &lt;- read.csv(&quot;pml-training.csv&quot;, header = TRUE)
+
+# remove the cols which are purely meta deta in the data set 
+
+TrainSet &lt;- TrainSet[,-c(1:7)]
+# replace all blanks in the dataset with NA to help in preprocessing 
+
+TrainSet &lt;- sapply(TrainSet, function(f){is.na(f)&lt;-which(f == '');f})
+
+TrainSet &lt;- as.data.frame(TrainSet, stringsAsFactors = TRUE)
+TrainSet$classe &lt;- as.factor(TrainSet$classe)
+
+# Identify all  variables were &quot;NA&quot; is &gt;50% 
+FeatureIndex = NULL; 
+for (i in 1:dim(TrainSet)[2]) {
+  if(sum(is.na(TrainSet[,i]))/length(TrainSet[,i]) &gt; 0.5)
+  { 
+    FeatureIndex &lt;- c(FeatureIndex, i); 
+  }
+}
+# Remove the features which &gt;50% imputations of &quot;NA&quot; values, we dont want this in the modelling set 
+TrainSet &lt;- TrainSet[,-FeatureIndex]; 
+
+# Create cross valudationset: train set (60%) and validation set (40%) within the TrainSet
+set.seed(1234); 
+inTrain &lt;- createDataPartition(y=TrainSet$classe, p=0.6, list = FALSE);
+ModelSet &lt;- TrainSet[inTrain,];
+ValidSet &lt;- TrainSet[-inTrain,];
+
+# Build a GBM boosting based model to predict classe on the ModelSet 
+time_ &lt;- proc.time(); 
+GBM_Model &lt;- train(classe ~ ., data = ModelSet, method = &quot;gbm&quot;, verbose = FALSE)</code></pre>
+<pre><code>## Loading required package: gbm</code></pre>
+<pre><code>## Warning: package 'gbm' was built under R version 3.0.3</code></pre>
+<pre><code>## Loading required package: survival
+## Loading required package: splines
+## 
+## Attaching package: 'survival'
+## 
+## The following object is masked from 'package:caret':
+## 
+##     cluster
+## 
+## Loading required package: parallel
+## Loaded gbm 2.1
+## Loading required package: plyr</code></pre>
+<pre><code>## Warning: package 'plyr' was built under R version 3.0.3</code></pre>
+<pre><code>## Warning: package 'e1071' was built under R version 3.0.3</code></pre>
+<pre class="r"><code>Timetaken &lt;- proc.time() - time_; 
+
+# find out what are the important variables 
+varImp(GBM_Model$finalModel) </code></pre>
+<pre><code>##                          Overall
+## roll_belt            2349.708142
+## pitch_belt            246.558197
+## yaw_belt              830.515319
+## total_accel_belt       20.215859
+## gyros_belt_x            0.000000
+## gyros_belt_y           35.158260
+## gyros_belt_z          345.462628
+## accel_belt_x            0.000000
+## accel_belt_y            0.000000
+## accel_belt_z           81.665962
+## magnet_belt_x         119.376656
+## magnet_belt_y         147.004329
+## magnet_belt_z         590.938584
+## roll_arm              102.428297
+## pitch_arm               0.000000
+## yaw_arm               159.504313
+## total_accel_arm         0.000000
+## gyros_arm_x             5.479788
+## gyros_arm_y            50.801685
+## gyros_arm_z             0.000000
+## accel_arm_x            14.650908
+## accel_arm_y             0.000000
+## accel_arm_z             7.280673
+## magnet_arm_x           85.451585
+## magnet_arm_y           70.326077
+## magnet_arm_z          143.142597
+## roll_dumbbell         365.314778
+## pitch_dumbbell         21.854103
+## yaw_dumbbell            6.599387
+## total_accel_dumbbell   59.186294
+## gyros_dumbbell_x       48.695568
+## gyros_dumbbell_y      239.800400
+## gyros_dumbbell_z       17.963180
+## accel_dumbbell_x      145.531105
+## accel_dumbbell_y      204.061958
+## accel_dumbbell_z      125.507079
+## magnet_dumbbell_x     146.208121
+## magnet_dumbbell_y     763.748975
+## magnet_dumbbell_z     786.372860
+## roll_forearm          500.763416
+## pitch_forearm        1260.565813
+## yaw_forearm            13.532819
+## total_accel_forearm    25.952401
+## gyros_forearm_x         0.000000
+## gyros_forearm_y         0.000000
+## gyros_forearm_z        16.090270
+## accel_forearm_x       284.014405
+## accel_forearm_y        26.786048
+## accel_forearm_z       199.132465
+## magnet_forearm_x       88.027556
+## magnet_forearm_y       22.496496
+## magnet_forearm_z      234.678657</code></pre>
+<pre class="r"><code># cross validate on the  ValidSet 
+ValidPred &lt;- predict(GBM_Model, ValidSet); 
+
+# Develop confusion Matrix for cross validation 
+confusionMatrix(data = ValidPred, reference = ValidSet$classe); </code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    1    2    3    4    5
+##          1 2200   51    0    0    1
+##          2   16 1426   48    3   27
+##          3    8   39 1294   43   11
+##          4    6    1   23 1235   18
+##          5    2    1    3    5 1385
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.961           
+##                  95% CI : (0.9565, 0.9652)
+##     No Information Rate : 0.2845          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.9507          
+##  Mcnemar's Test P-Value : 2.248e-12       
+## 
+## Statistics by Class:
+## 
+##                      Class: 1 Class: 2 Class: 3 Class: 4 Class: 5
+## Sensitivity            0.9857   0.9394   0.9459   0.9603   0.9605
+## Specificity            0.9907   0.9851   0.9844   0.9927   0.9983
+## Pos Pred Value         0.9769   0.9382   0.9276   0.9626   0.9921
+## Neg Pred Value         0.9943   0.9855   0.9885   0.9922   0.9912
+## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+## Detection Rate         0.2804   0.1817   0.1649   0.1574   0.1765
+## Detection Prevalence   0.2870   0.1937   0.1778   0.1635   0.1779
+## Balanced Accuracy      0.9882   0.9623   0.9652   0.9765   0.9794</code></pre>
+<pre class="r"><code># Test model on the test set for model out of sample testing 
+#first prepare the data of the test set 
+TestSet &lt;- read.csv(&quot;pml-testing.csv&quot;, header = TRUE); 
+TestSet &lt;- TestSet[,-c(1:7)]; 
+TestSet &lt;- sapply(TestSet, function(f){is.na(f)&lt;-which(f == '');f}); 
+TestSet &lt;- as.data.frame(TestSet, stringsAsFactors = TRUE)
+FeatureIndex = NULL; 
+for (i in 1:dim(TestSet)[2]) {
+  if(sum(is.na(TestSet[,i]))/length(TestSet[,i]) &gt; 0.5)
+  { 
+    FeatureIndex &lt;- c(FeatureIndex, i); 
+  }
+}
+TestSet &lt;- TestSet[,-FeatureIndex]; 
+
+
+# Predit on the testset using the GBM Model just built 
+TestPred &lt;- as.character(predict(GBM_Model, TestSet));
+
+# write the predicted output to a file for the assignment submission 
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0(&quot;problem_id_&quot;,i,&quot;.txt&quot;)
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(TestPred); </code></pre>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
