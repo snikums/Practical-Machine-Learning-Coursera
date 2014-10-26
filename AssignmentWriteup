@@ -1,0 +1,65 @@
+Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+Data Preprocessing 
+The first task was to understand the various features provided. Key observations made were: 
+1.	A set of features were purely meta data (see list below). These would not contribute to the prediction power of the model and were eliminated. 
+a.	serial# (variable name created, this was a blank column name in the original dataset)
+b.	user_name
+c.	raw_timestamp_part_1
+d.	raw_timestamp_part_2
+e.	cvtd_timestamp
+f.	new_window
+g.	num_window
+
+2.	A set of features had majority blanks or NA or #DIV/0! Values. These were replaced with NA in the dataset using the sapply command in R. 
+
+Feature Selection
+To choose the relevant features the following observations were made: 
+1.	As discussed in the previous section, meta data oriented features were eliminated. 
+2.	Features which has > 50% of NA values were considered as not providing any contributory prediction power to the model and were eliminated. 
+3.	Lastly, all numeric variables around the yaw, pitch & roll features were kept since they seemed logical to provide contribution to the prediction power of the model. This was later validated also using the varImp command to measure variable importance post the model building. 
+In all, from the initial list of 153 features, the final set of features used for modelling was 53 features. 
+
+Cross Validation
+To cross validate, the training set was split into a 60% modelling set and a 40% validation set, the partitioning was done using the “classe” feature, the outcome variable. The model was built using the “ModelSet” data frame and the validation was done on the “ValidSet” data frame. 
+
+The Model 
+The “gbm” method or Generalized Boosted Model with trees was used as the model type for this classification prediction problem. The outcome variable of “classe” was predicted from the 53 features set from the preprocessing & feature selection section. 
+
+GBM_Model <- train(classe ~ ., data = ModelSet, method = "gbm", verbose = FALSE)
+
+Model Performance & Out of Sample Validation
+
+The resultant model built was then validated on the ValidSet 40% sample. The model performed quite well (see below) across all classes. The overall Kappa was 95% and accuracy was 96%. The confusion matrix of actual to predicted is as below. 
+		Reference
+## Prediction    1    2    3    4    5
+##          1 2200   51    0    0    1
+##          2   16 1426   48    3   27
+##          3    8   39 1294   43   11
+##          4    6    1   23 1235   18
+##          5    2    1    3    5 1385
+. ## Statistics by Class:
+## 
+##                      Class: 1 Class: 2 Class: 3 Class: 4 Class: 5
+## Sensitivity            0.9857   0.9394   0.9459   0.9603   0.9605
+## Specificity            0.9907   0.9851   0.9844   0.9927   0.9983
+## Pos Pred Value         0.9769   0.9382   0.9276   0.9626   0.9921
+## Neg Pred Value         0.9943   0.9855   0.9885   0.9922   0.9912
+## Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+## Detection Rate         0.2804   0.1817   0.1649   0.1574   0.1765
+## Detection Prevalence   0.2870   0.1937   0.1778   0.1635   0.1779
+## Balanced Accuracy      0.9882   0.9623   0.9652   0.9765   0.9794
+Due to the good performance in the validation dataset, I expect the model to generalize well in the test cases of 20 records also and expect >90% accuracy in prediction for the test cases. 
+Importance of Features 
+Finally, the top 5 features that contribute to the prediction of the outcome variable “classe” are the following: 
+1.	roll_belt            
+2.	pitch_forearm
+3.	yaw_belt
+4.	magnet_dumbbell_z
+5.	magnet_dumbbell_y
+Outcome
+The GBM model worked well in cross validation as well as correctly predicting the outcomes on the 20 test records. This was a fun assignment! 
+
